@@ -1,3 +1,18 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+savePrefix: ''
+
+allowBuilds:
+  esbuild: true
+
+catalog:
+  typescript: '6.0.3'
+
+overrides:
+  typescript: 'catalog:'
+
+minimumReleaseAgeExclude:
+  - '@fastify/autoload@6.5.1'
+  - '@fastify/sensible@6.0.7'
