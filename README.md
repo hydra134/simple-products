@@ -2,13 +2,28 @@
 
 TypeScript monorepo powered by pnpm and Turborepo.
 
+## Run the full stack
+
+With Docker running:
+
+```sh
+make -C infra up
+make -C infra down
+```
+
+`up` handles setup, builds, and startup for the frontend, backend, and PostgreSQL, with
+frontend Fast Refresh and automatic backend restarts when source files change.
+`down` stops the stack and preserves database data. See [infra/README.md](infra/README.md)
+for configuration and other commands.
+
 ## Fastify API
 
-Run `pnpm --filter api dev` to start the API at `http://127.0.0.1:3001`.
-Run `pnpm --filter api check` for formatting, linting, type-checking, and tests.
-For production, run `pnpm --filter api build` followed by `pnpm --filter api start`.
+Run `pnpm --filter backend-admin-panel dev` to start the API at `http://127.0.0.1:3001`.
+Run `pnpm --filter backend-admin-panel check` for formatting, linting, type-checking, and tests.
+For production, run `pnpm --filter backend-admin-panel build` followed by
+`pnpm --filter backend-admin-panel start`.
 The API extends the root TypeScript config with NodeNext settings and reuses root lint/format
-configs. See `apps/api/README.md` for routes and environment settings.
+configs. See `apps/backend-admin-panel/README.md` for routes and environment settings.
 
 ## Workspace layout
 
@@ -25,7 +40,23 @@ Every workspace package should extend `tsconfig.base.json` and provide its own `
 - `pnpm lint` — lint TypeScript, JavaScript, and CSS
 - `pnpm typecheck` — type-check all workspace packages
 - `pnpm format` — format the repository
-- `pnpm check` — run all static checks
+- `pnpm test` — run all application unit tests with Vitest
+- `pnpm test:watch` — watch and rerun tests during development
+- `pnpm test:integration` — run PostgreSQL integration tests
+- `pnpm check` — run all static checks and application unit tests
+
+## Tests
+
+All JavaScript, TypeScript, and TSX tests use the shared `vitest.config.js`. Name unit tests
+`*.test.*` or `*.spec.*`; the runner discovers them throughout the repository. Tests use the
+Node environment by default. Import test APIs explicitly from `vitest`; no test globals are
+added to application types. See the [Vitest configuration docs](https://vitest.dev/config/).
+
+Run one app with `pnpm --filter backend-admin-panel test` or
+`pnpm --filter front-admin-panel test`. Tests under `test/integration/` run separately through
+`pnpm test:integration`; they currently skip when PostgreSQL settings are absent. To execute
+them, provide `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` for an isolated database
+whose name ends in `_integration`. Do not point integration tests at the normal admin database.
 
 ## ESLint
 

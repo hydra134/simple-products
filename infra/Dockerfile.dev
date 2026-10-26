@@ -1,0 +1,18 @@
+ARG NODE_IMAGE
+FROM ${NODE_IMAGE}
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+WORKDIR /workspace
+
+RUN npm install --global pnpm@12.15.0 \
+  && mkdir -p /pnpm \
+  && chown node:node /pnpm /workspace
+
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node apps/backend-admin-panel/package.json apps/backend-admin-panel/package.json
+COPY --chown=node:node apps/front-admin-panel/package.json apps/front-admin-panel/package.json
+USER node
+RUN CI=true pnpm install --frozen-lockfile
+
+COPY --chown=node:node . .

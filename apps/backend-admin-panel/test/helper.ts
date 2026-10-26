@@ -1,12 +1,15 @@
-import { type TestContext } from 'node:test';
+import { type TestContext } from 'vitest';
 import Fastify from 'fastify';
 import fp from 'fastify-plugin';
 import app from '../src/app.js';
 
-export async function build(t: TestContext) {
+export async function build(t: TestContext, checkDatabase: () => Promise<void> = async () => {}) {
   const server = Fastify();
-  t.after(async () => server.close());
-  await server.register(fp(app));
+  t.onTestFinished(async () => server.close());
+  const databasePlugin = fp(async (fastify) => {
+    fastify.decorate('checkDatabase', checkDatabase);
+  });
+  await server.register(app, { databasePlugin });
   await server.ready();
   return server;
 }

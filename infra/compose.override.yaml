@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: simple-products-admin-backend:dev
+    build:
+      dockerfile: infra/Dockerfile.dev
+    init: true
+    command: [pnpm, --filter, backend-admin-panel, dev]
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../apps/backend-admin-panel/src:/workspace/apps/backend-admin-panel/src:ro
+
+  frontend:
+    image: simple-products-admin-frontend:dev
+    build:
+      dockerfile: infra/Dockerfile.dev
+    init: true
+    command: [pnpm, --filter, front-admin-panel, dev, --hostname, 0.0.0.0]
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../apps/front-admin-panel/src:/workspace/apps/front-admin-panel/src:ro
+      - ../apps/front-admin-panel/public:/workspace/apps/front-admin-panel/public:ro

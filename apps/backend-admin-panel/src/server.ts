@@ -8,8 +8,8 @@ const host = process.env.HOST ?? '127.0.0.1';
 async function shutdown() {
   try {
     await server.close();
-  } catch (error) {
-    server.log.error(error);
+  } catch {
+    server.log.error('Server shutdown failed');
     process.exitCode = 1;
   }
 }
@@ -23,8 +23,8 @@ try {
   }
   await server.register(app);
   await server.listen({ port, host });
-} catch (error) {
-  server.log.error(error);
+} catch {
+  server.log.error('Server failed to start; database errors are sanitized');
   await shutdown();
   process.exitCode = 1;
 }

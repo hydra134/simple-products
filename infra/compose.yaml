@@ -1,0 +1,82 @@
+name: simple-products-admin
+
+services:
+  postgres:
+    image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run make -C infra setup}
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  backend:
+    image: ${BACKEND_IMAGE:-simple-products-admin-backend:local}
+    build:
+      context: ..
+      dockerfile: apps/backend-admin-panel/Dockerfile
+      args:
+        NODE_IMAGE: &node-image node:26.11.1-bookworm-slim@sha256:86f07bc9c5dce4578cf37e5a418b7bfc7f817cda25cde66e2b66e95ed86c4567
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3001'
+      PGHOST: postgres
+      PGPORT: '5432'
+      PGDATABASE: ${POSTGRES_DB:-admin}
+      PGUSER: ${POSTGRES_USER:-admin}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Run make -C infra setup}
+    ports:
+      - 127.0.0.1:${BACKEND_PORT:-3001}:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-simple-products-admin-frontend:local}
+    build:
+      context: ..
+      dockerfile: apps/front-admin-panel/Dockerfile
+      args:
+        NODE_IMAGE: *node-image
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      API_INTERNAL_URL: http://backend:3001
+    ports:
+      - 127.0.0.1:${FRONTEND_PORT:-3000}:3000
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  postgres_data:
